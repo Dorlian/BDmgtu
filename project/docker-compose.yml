@@ -1,0 +1,69 @@
+# ============================================================
+#  Стек для запуска заданий 3, 4 и 5
+#  - postgres   : PostgreSQL 16 с базой demo (Task 3) и test (Task 4)
+#  - jupyter    : JupyterLab с psycopg2, ipython-sql и PySpark (Tasks 3-5)
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # PostgreSQL 16
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: pg_demo
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # Скрипт инициализации: загружает дамп demo при первом запуске
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+      # Папка с дампом базы — положите сюда demo-small.sql.gz
+      - ./dumps:/dumps:ro
+    # Ждём, пока реально можно подключиться к demo (а не только к кластеру).
+    # Иначе Jupyter стартует слишком рано и psycopg2 даёт connection refused.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d demo -q && psql -U postgres -d demo -tAc 'SELECT 1' | grep -q 1",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 120
+      start_period: 30s
+
+  # ----------------------------------------------------------
+  # JupyterLab (Python 3.11 + psycopg2 + PySpark + sqlalchemy)
+  # ----------------------------------------------------------
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: jupyter_lab
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_USER: postgres
+      POSTGRESQL_PASSWORD: postgres
+      JUPYTER_TOKEN: ""            # пустой токен = без пароля
+      JUPYTER_ENABLE_LAB: "yes"
+    ports:
+      - "8888:8888"
+    volumes:
+      # Notebooks
+      - ./notebooks:/home/jovyan/work
+      # CSV-датасеты для заданий 4 и 5
+      - ./datasets:/home/jovyan/work/datasets
+    working_dir: /home/jovyan/work
+
+volumes:
+  pg_data:

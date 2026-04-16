@@ -1,0 +1,31 @@
+# ============================================================
+#  JupyterLab образ для заданий 3, 4 и 5
+#  Базовый образ: jupyter/pyspark-notebook (включает Java + Spark)
+# ============================================================
+
+FROM jupyter/pyspark-notebook:spark-3.5.0
+
+USER root
+
+# Системные зависимости
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq-dev \
+        gcc \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+USER ${NB_UID}
+
+# Python-пакеты
+RUN pip install --no-cache-dir \
+    psycopg2-binary==2.9.9 \
+    sqlalchemy==2.0.30 \
+    ipython-sql==0.5.0 \
+    pandas==2.2.2 \
+    matplotlib==3.8.4 \
+    seaborn==0.13.2 \
+    jupyterlab==4.2.0
+
+# Стандартный порт JupyterLab
+EXPOSE 8888
+
+CMD ["start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.password=''"]
