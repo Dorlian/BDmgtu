@@ -212,6 +212,39 @@ docker compose ps
 docker compose logs postgres
 ```
 
+### Ошибка `01_load_demo.sh: cannot execute: required file not found`
+
+Чаще всего это **Windows CRLF** в `init-db/01_load_demo.sh`: в Linux-контейнере shebang превращается в `#!/bin/bash\r`.
+
+**По шагам:**
+
+1. Обновить репозиторий (в корне клона, где есть `.gitattributes`):
+
+   ```bash
+   git pull origin main
+   ```
+
+2. Принудительно пересоздать том PostgreSQL (иначе init не запустится повторно):
+
+   ```bash
+   cd project
+   docker compose down -v
+   ```
+
+3. Если ошибка осталась, из папки `project` выполнить (PowerShell):
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\fix-sh-line-endings.ps1
+   ```
+
+4. Снова:
+
+   ```bash
+   docker compose up --build
+   ```
+
+В редакторе можно вручную открыть `init-db/01_load_demo.sh`, внизу справа переключить **CRLF → LF** и сохранить файл, затем повторить шаги 2 и 4.
+
 ### PySpark: нет Java
 
 Образ `jupyter/pyspark-notebook` включает Java 17.  
