@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "PostgreSQL",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["-f", "project/docker-compose.yml", "up", "postgres"],
+      "port": 5432,
+      "autoPort": true
+    },
+    {
+      "name": "JupyterLab",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["-f", "project/docker-compose.yml", "up", "jupyter"],
+      "port": 8888,
+      "autoPort": true
+    }
+  ]
+}
